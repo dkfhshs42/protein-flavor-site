@@ -7,52 +7,89 @@ function extractFirstJsonObject(text: string) {
   return text.slice(s, e + 1);
 }
 
-async function ollamaRawChat({
+function stripCodeFences(s: string) {
+  return s
+    .trim()
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/```$/i, "")
+    .trim();
+}
+
+// ✅ Ollama messages를 Gemini 프롬프트 텍스트로 안전하게 합치기
+function joinMessages(messages: OllamaChatMsg[]) {
+  const system = messages
+    .filter((m) => m.role === "system")
+    .map((m) => m.content)
+    .join("\n\n");
+
+  const convo = messages
+    .filter((m) => m.role !== "system")
+    .map((m) => `${m.role.toUpperCase()}:\n${m.content}`)
+    .join("\n\n");
+
+  return (system ? `SYSTEM:\n${system}\n\n` : "") + convo;
+}
+
+async function geminiRawChat({
   messages,
   model,
 }: {
   messages: OllamaChatMsg[];
   model: string;
 }): Promise<string> {
-  const base = process.env.OLLAMA_BASE_URL || "http://127.0.0.1:11434";
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error(
+      "GEMINI_API_KEY is missing. Add it to .env.local and Vercel Environment Variables."
+    );
+  }
 
-  const res = await fetch(`${base}/api/chat`, {
+  const promptText = joinMessages(messages);
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+  const res = await fetch(url, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
-      model,
-      messages,
-      stream: false,
-      // 모델/버전에 따라 무시될 수 있지만, 되면 JSON 강제에 도움
-      format: "json",
-      options: { temperature: 0.2 },
+      contents: [{ role: "user", parts: [{ text: promptText }] }],
+      generationConfig: {
+        temperature: 0.2,
+        maxOutputTokens: 1024,
+        // ✅ 가능하면 JSON으로만 받게 강제
+        response_mime_type: "application/json",
+      },
     }),
   });
 
   if (!res.ok) {
-    const t = await res.text();
-    throw new Error(`Ollama error ${res.status}: ${t.slice(0, 400)}`);
+    const t = await res.text().catch(() => "");
+    throw new Error(`Gemini error ${res.status}: ${t.slice(0, 800)}`);
   }
 
-  const data = await res.json();
-  return (data?.message?.content ?? "") as string;
+  const data: any = await res.json();
+  const text =
+    data?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text ?? "").join("") ?? "";
+
+  return text as string;
 }
 
 export async function ollamaChatJSON<T>({
   messages,
-  model = process.env.OLLAMA_MODEL || "llama3:8b",
+  model = process.env.GEMINI_MODEL || "gemini-1.5-flash",
 }: {
   messages: OllamaChatMsg[];
   model?: string;
 }): Promise<T> {
   // 1차 시도
-  const out1 = await ollamaRawChat({ messages, model });
+  const out1raw = await geminiRawChat({ messages, model });
+  const out1 = stripCodeFences(out1raw);
 
   try {
     const json1 = extractFirstJsonObject(out1);
     return JSON.parse(json1) as T;
   } catch {
-    // 2차: JSON 리페어 요청
+    // 2차: JSON 리페어 요청 (✅ 기존 너 로직 그대로)
     const repairMessages: OllamaChatMsg[] = [
       {
         role: "system",
@@ -67,7 +104,9 @@ export async function ollamaChatJSON<T>({
       },
     ];
 
-    const out2 = await ollamaRawChat({ messages: repairMessages, model });
+    const out2raw = await geminiRawChat({ messages: repairMessages, model });
+    const out2 = stripCodeFences(out2raw);
+
     const json2 = extractFirstJsonObject(out2);
     return JSON.parse(json2) as T;
   }
