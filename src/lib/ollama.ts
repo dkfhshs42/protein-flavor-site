@@ -46,7 +46,9 @@ async function geminiRawChat({
   }
 
   const promptText = joinMessages(messages);
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  const modelId = model.replace(/^models\//, "");
+const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
+
 
   const res = await fetch(url, {
     method: "POST",
@@ -76,7 +78,7 @@ async function geminiRawChat({
 
 export async function ollamaChatJSON<T>({
   messages,
-  model = process.env.GEMINI_MODEL || "gemini-1.5-flash",
+  model = process.env.GEMINI_MODEL || "models/gemini-1.5-flash",
 }: {
   messages: OllamaChatMsg[];
   model?: string;
