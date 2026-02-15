@@ -24,7 +24,12 @@ export type FlavorRow = {
 
   brand: string;
   product_name: string;
+
+  // view에서 coalesce(...) as image_url 로 내려오는 값
   image_url: string | null;
+
+  // ✅ 추가: WPC/WPI
+  protein_type: "WPC" | "WPI" | null;
 
   taste_keywords: TasteKeyword[];
 };
@@ -38,6 +43,9 @@ export type Filters = {
 
   water?: "추천" | "비추천";
   milk?: "추천" | "비추천";
+
+  // ✅ 추가
+  protein_type?: ("WPC" | "WPI")[];
 };
 
 /* ---------- helpers ---------- */
@@ -81,8 +89,8 @@ export async function fetchFlavors(params?: { query?: string; filters?: Filters 
   let req = supabase
     .from("flavor_search_view")
     .select(
-    "id, product_id, flavor_name, summary_text, sweetness, fishy, artificial, bloating, water, milk, brand, product_name, image_url, taste_keywords"
-  )
+      "id, product_id, flavor_name, summary_text, sweetness, fishy, artificial, bloating, water, milk, brand, product_name, image_url, protein_type, taste_keywords"
+    )
     .order("flavor_name", { ascending: true });
 
   // 🔍 검색 (부분 일치)
@@ -101,6 +109,9 @@ export async function fetchFlavors(params?: { query?: string; filters?: Filters 
   if (f?.artificial?.length) req = req.in("artificial", f.artificial);
   if (f?.bloating?.length) req = req.in("bloating", f.bloating);
 
+  // ✅ WPC/WPI 타입 필터
+  if (f?.protein_type?.length) req = req.in("protein_type", f.protein_type);
+
   // 🥤 물/우유 단일 선택
   if (f?.water) req = req.eq("water", f.water);
   if (f?.milk) req = req.eq("milk", f.milk);
@@ -109,15 +120,16 @@ export async function fetchFlavors(params?: { query?: string; filters?: Filters 
   // - or() 문자열에 @> 넣으면 공백/따옴표에서 파싱 깨짐
   // - 해결: filter()를 OR로 직접 체인
   if (f?.taste?.length) {
-    // 중복 제거
     const ids = Array.from(new Set(f.taste)).filter(Boolean);
 
-    // 첫 조건
-    req = req.filter("taste_keywords", "cs", jsonbContainFilter(ids[0]));
+    if (ids.length > 0) {
+      // 첫 조건
+      req = req.filter("taste_keywords", "cs", jsonbContainFilter(ids[0]));
 
-    // 나머지는 OR로 연결
-    for (let i = 1; i < ids.length; i++) {
-      req = req.or(`taste_keywords.cs.${jsonbContainFilter(ids[i])}`);
+      // 나머지는 OR로 연결
+      for (let i = 1; i < ids.length; i++) {
+        req = req.or(`taste_keywords.cs.${jsonbContainFilter(ids[i])}`);
+      }
     }
   }
 
@@ -125,11 +137,11 @@ export async function fetchFlavors(params?: { query?: string; filters?: Filters 
   if (error) throw new Error(error.message);
 
   const rows = (data ?? []) as any[];
-  return rows.map((r) => ({
-  ...r,
-  taste_keywords: normalizeTasteKeywords(
-    r.taste_keywords ?? r.taste_keyword ?? r.keywords ?? r.taste
-  ),
-})) as FlavorRow[];
 
+  return rows.map((r) => ({
+    ...r,
+    taste_keywords: normalizeTasteKeywords(
+      r.taste_keywords ?? r.taste_keyword ?? r.keywords ?? r.taste
+    ),
+  })) as FlavorRow[];
 }

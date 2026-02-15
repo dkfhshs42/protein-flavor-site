@@ -12,7 +12,7 @@ type Props = {
   tags: string[];
   imageSrc?: string | null;
   tasteKeywords?: TasteKeyword[];
-  showDivider?: boolean; // ✅ 추가
+  showDivider?: boolean;
 };
 
 export default function FlavorCard({
@@ -44,7 +44,7 @@ export default function FlavorCard({
               {title}
             </h3>
 
-            {/* 태그 */}
+            {/* ✅ 메인 화면과 동일: wrap 허용 */}
             <div className="mt-3 flex flex-wrap gap-2">
               {tasteKeywords.map((k) => (
                 <span
@@ -82,10 +82,8 @@ export default function FlavorCard({
         </div>
       </div>
 
-      {/* ✅ 카드 하단 구분선 */}
-      {showDivider && (
-        <div className="mx-10 h-px bg-neutral-200" />
-      )}
+      {/* 카드 하단 구분선 */}
+      {showDivider && <div className="mx-10 h-px bg-neutral-200" />}
     </div>
   );
 }

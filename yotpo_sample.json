@@ -1,0 +1,227 @@
+{
+  "foundFilteredReviews": true,
+  "pagination": {
+    "page": 1,
+    "perPage": 5,
+    "total": 1350
+  },
+  "reviews": [
+    {
+      "id": 805514706,
+      "score": 5,
+      "votesUp": 0,
+      "votesDown": 0,
+      "content": "Classic Old School Lovefull flavour",
+      "title": null,
+      "createdAt": "2026-02-03T18:01:58",
+      "verifiedBuyer": true,
+      "sentiment": 0.8244501,
+      "isIncentivized": false,
+      "incentiveType": null,
+      "isShop": true,
+      "topics": {
+        "taste": {
+          "name": "taste",
+          "sentence": "Classic Old School Lovefull flavour"
+        }
+      },
+      "fieldsHighlights": null,
+      "customFields": null,
+      "metadata": null,
+      "videosData": null,
+      "imagesData": null,
+      "comment": null,
+      "user": {
+        "userId": 180801269,
+        "socialImage": null,
+        "userType": "User",
+        "isSocialConnected": 0,
+        "displayName": "Atharva A."
+      },
+      "sourceReviewId": null,
+      "syndicationData": null,
+      "groupingData": null,
+      "country": null,
+      "productVariants": null,
+      "language": "en",
+      "translatedLanguage": null
+    },
+    {
+      "id": 805247285,
+      "score": 5,
+      "votesUp": 0,
+      "votesDown": 0,
+      "content": "Consistently good",
+      "title": "Consistently good",
+      "createdAt": "2026-02-02T22:04:47",
+      "verifiedBuyer": true,
+      "sentiment": 0.92781377,
+      "isIncentivized": false,
+      "incentiveType": null,
+      "isShop": false,
+      "topics": null,
+      "fieldsHighlights": null,
+      "customFields": null,
+      "metadata": null,
+      "videosData": null,
+      "imagesData": null,
+      "comment": null,
+      "user": {
+        "userId": 180776187,
+        "socialImage": null,
+        "userType": "User",
+        "isSocialConnected": 0,
+        "displayName": "Jordan H."
+      },
+      "sourceReviewId": null,
+      "syndicationData": null,
+      "groupingData": null,
+      "country": {
+        "code": "US",
+        "label": "🇺🇸 United States"
+      },
+      "productVariants": {
+        "Size": "10 lb",
+        "Flavor": "Double Rich Chocolate"
+      },
+      "language": "en",
+      "translatedLanguage": null
+    },
+    {
+      "id": 804242389,
+      "score": 4,
+      "votesUp": 0,
+      "votesDown": 0,
+      "content": "Taste good bus is wayyy sweeter than what i was expecting",
+      "title": null,
+      "createdAt": "2026-01-30T20:07:25",
+      "verifiedBuyer": true,
+      "sentiment": 0.5419292,
+      "isIncentivized": false,
+      "incentiveType": null,
+      "isShop": true,
+      "topics": {
+        "bus": {
+          "name": "bus",
+          "sentence": "Taste good bus is wayyy sweeter than what i was expecting"
+        }
+      },
+      "fieldsHighlights": null,
+      "customFields": null,
+      "metadata": null,
+      "videosData": null,
+      "imagesData": null,
+      "comment": null,
+      "user": {
+        "userId": 180706627,
+        "socialImage": null,
+        "userType": "User",
+        "isSocialConnected": 0,
+        "displayName": "Jowel"
+      },
+      "sourceReviewId": null,
+      "syndicationData": null,
+      "groupingData": null,
+      "country": null,
+      "productVariants": null,
+      "language": "en",
+      "translatedLanguage": null
+    },
+    {
+      "id": 804153395,
+      "score": 5,
+      "votesUp": 0,
+      "votesDown": 0,
+      "content": "This protein is good don’t think twice",
+      "title": null,
+      "createdAt": "2026-01-30T15:33:13",
+      "verifiedBuyer": true,
+      "sentiment": 0.51063603,
+      "isIncentivized": false,
+      "incentiveType": null,
+      "isShop": true,
+      "topics": {
+        "protein": {
+          "name": "protein",
+          "sentence": "This protein is good don’t think twice"
+        }
+      },
+      "fieldsHighlights": null,
+      "customFields": null,
+      "metadata": null,
+      "videosData": null,
+      "imagesData": null,
+      "comment": null,
+      "user": {
+        "userId": 180700841,
+        "socialImage": null,
+        "userType": "User",
+        "isSocialConnected": 0,
+        "displayName": "Emerson"
+      },
+      "sourceReviewId": null,
+      "syndicationData": null,
+      "groupingData": null,
+      "country": null,
+      "productVariants": null,
+      "language": "en",
+      "translatedLanguage": null
+    },
+    {
+      "id": 803009233,
+      "score": 5,
+      "votesUp": 0,
+      "votesDown": 0,
+      "content": "I love it smells awesome",
+      "title": null,
+      "createdAt": "2026-01-28T04:11:10",
+      "verifiedBuyer": true,
+      "sentiment": 0.94707,
+      "isIncentivized": false,
+      "incentiveType": null,
+      "isShop": true,
+      "topics": null,
+      "fieldsHighlights": null,
+      "customFields": null,
+      "metadata": null,
+      "videosData": null,
+      "imagesData": null,
+      "comment": null,
+      "user": {
+        "userId": 180568095,
+        "socialImage": null,
+        "userType": "User",
+        "isSocialConnected": 0,
+        "displayName": "Chris"
+      },
+      "sourceReviewId": null,
+      "syndicationData": null,
+      "groupingData": null,
+      "country": null,
+      "productVariants": null,
+      "language": "en",
+      "translatedLanguage": null
+    }
+  ],
+  "products": [
+    {
+      "id": 937344405,
+      "domainKey": "10686370677003",
+      "name": "GOLD STANDARD 100% WHEY™",
+      "socialLinks": {
+        "linkedin": "https://yotpo.com/go/b3vFJars",
+        "facebook": "https://yotpo.com/go/8NN65tsp",
+        "twitter": "https://yotpo.com/go/3RJAcZya",
+        "googleOauth2": "https://yotpo.com/go/uvyIX09f"
+      },
+      "embeddedWidgetLink": "https://yotpo.com/go/6BA1ekxe",
+      "testimonialsProductLink": "https://yotpo.com/go/7cXIs4RL",
+      "productLink": "https://yotpo.com/go/icJjmG3f",
+      "imageUrl": "https://cdn-yotpo-images-production.yotpo.com/Product/903474451/753638812/square.png?1762288466",
+      "productTags": null
+    }
+  ],
+  "groupingData": null,
+  "syndicationData": null,
+  "productTags": null
+}
