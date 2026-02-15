@@ -78,7 +78,7 @@ const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:
 
 export async function ollamaChatJSON<T>({
   messages,
-  model = process.env.GEMINI_MODEL || "models/gemini-1.5-flash",
+  model = process.env.GEMINI_MODEL || "gemini-2.5-flash",
 }: {
   messages: OllamaChatMsg[];
   model?: string;
