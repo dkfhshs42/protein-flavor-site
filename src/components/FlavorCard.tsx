@@ -49,7 +49,7 @@ export default function FlavorCard({
               {tasteKeywords.map((k) => (
                 <span
                   key={k.id}
-                  className="flex items-center gap-1 whitespace-nowrap rounded-full bg-neutral-100 px-2.5 py-1 text-[13px] font-medium text-neutral-500"
+                  className="flex items-center gap-1 whitespace-nowrap rounded-full bg-neutral-200 px-2.5 py-1 text-[13px] font-medium text-neutral-500"
                 >
                   {k.icon_url && (
                     <img
@@ -67,7 +67,7 @@ export default function FlavorCard({
               {tags.map((t) => (
                 <span
                   key={t}
-                  className="whitespace-nowrap rounded-full bg-neutral-100 px-2.5 py-1 text-[13px] font-medium text-neutral-500"
+                  className="whitespace-nowrap rounded-full bg-neutral-200 px-2.5 py-1 text-[13px] font-medium text-neutral-500"
                 >
                   {t}
                 </span>

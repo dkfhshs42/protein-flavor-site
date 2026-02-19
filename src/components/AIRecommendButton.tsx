@@ -33,8 +33,7 @@ export default function AIRecommendButton() {
   type="button"
   onClick={() => setOpen(true)}
   className="h-12 whitespace-nowrap rounded-full bg-neutral-700 px-5 text-sm
-    text-white active:scale-[0.99]
-    focus:outline-none focus:ring-2 focus:ring-neutral-200"
+    text-white"
 >
   AI 추천
 </button>

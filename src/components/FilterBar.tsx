@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 type TasteKeywordRow = {
@@ -37,19 +37,71 @@ export default function FilterBar({ tasteKeywords }: { tasteKeywords: TasteKeywo
   const [panelKey, setPanelKey] = useState<PanelKey>("all");
   const panelRef = useRef<HTMLDivElement>(null);
 
+  // ✅ "열려있는 패널의 키" (버튼 회색 유지 기준)
+  const [openKey, setOpenKey] = useState<PanelKey | null>(null);
+
+  // ✅ hover 닫기 딜레이 (버튼 → 패널 이동 시 깜빡임 방지)
+  const closeTimerRef = useRef<number | null>(null);
+  const cancelClose = () => {
+    if (closeTimerRef.current) {
+      window.clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  };
+
+  const closePanel = () => {
+    cancelClose();
+    setOpen(false);
+    setOpenKey(null);
+  };
+
+  const scheduleClose = (ms = 150) => {
+    cancelClose();
+    closeTimerRef.current = window.setTimeout(() => {
+      closePanel();
+    }, ms);
+  };
+
+  // ✅ hover/click한 필터 버튼 기준으로 패널을 띄울 좌표
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+
   const router = useRouter();
   const sp = useSearchParams();
 
+  // ✅ 바깥 클릭 닫기
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-        setOpen(false);
+        closePanel();
       }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
+
+  // ✅ 패널이 화면 밖으로 나가면 자동 보정
+  useLayoutEffect(() => {
+    if (!open || !pos) return;
+    const el = panelRef.current;
+    if (!el) return;
+
+    const margin = 12;
+    const rect = el.getBoundingClientRect();
+
+    let left = pos.left;
+    let top = pos.top;
+
+    if (left + rect.width > window.innerWidth - margin) {
+      left = Math.max(margin, window.innerWidth - rect.width - margin);
+    }
+    if (top + rect.height > window.innerHeight - margin) {
+      top = Math.max(margin, window.innerHeight - rect.height - margin);
+    }
+    top = Math.max(margin, top);
+
+    if (left !== pos.left || top !== pos.top) setPos({ left, top });
+  }, [open, pos, panelKey]);
 
   const activeCount = useMemo(() => {
     const multiCount = MULTI_KEYS.reduce((acc, k) => acc + sp.getAll(k).length, 0);
@@ -69,6 +121,9 @@ export default function FilterBar({ tasteKeywords }: { tasteKeywords: TasteKeywo
     if (key === "all") return activeCount > 0;
     return false; // product / type (미구현)
   };
+
+  // ✅ 버튼 회색 유지 기준: "그 패널이 열려있는가?"
+  const isFocused = (key: PanelKey) => openKey === key;
 
   const toggleMulti = (key: MultiKey, value: string) => {
     const next = new URLSearchParams(sp.toString());
@@ -96,14 +151,24 @@ export default function FilterBar({ tasteKeywords }: { tasteKeywords: TasteKeywo
   const isSelectedMulti = (key: MultiKey, value: string) => sp.getAll(key).includes(value);
   const isSelectedSingle = (key: SingleKey, value: string) => sp.get(key) === value;
 
-  const resetAll = () => {
-    const next = new URLSearchParams(sp.toString());
-    [...MULTI_KEYS, ...SINGLE_KEYS].forEach((k) => next.delete(k));
-    router.push(`/?${next.toString()}`);
-  };
-
-  const openPanel = (k: PanelKey) => {
+  // ✅ hover/click 시 오른쪽에 패널 오픈
+  const openPanel = (k: PanelKey, e?: React.MouseEvent<HTMLElement>) => {
+    cancelClose();
     setPanelKey(k);
+    setOpenKey(k); // ✅ "이 패널이 열려있다"를 즉시 기록
+
+    if (e?.currentTarget) {
+      const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      const margin = 12;
+
+      setPos({
+        left: r.right + margin,
+        top: r.top,
+      });
+    } else {
+      setPos({ left: Math.max(12, window.innerWidth / 2 - 260), top: 96 });
+    }
+
     setOpen(true);
   };
 
@@ -117,10 +182,10 @@ export default function FilterBar({ tasteKeywords }: { tasteKeywords: TasteKeywo
       case "fishy":
       case "artificial":
       case "bloating":
-        return "w-[min(560px,calc(100vw-2rem))]";
+        return "w-[min(450px,calc(100vw-2rem))]";
       case "water":
       case "milk":
-        return "w-[min(420px,calc(100vw-2rem))]";
+        return "w-[min(200px,calc(100vw-2rem))]";
       case "product":
       case "type":
       default:
@@ -130,76 +195,115 @@ export default function FilterBar({ tasteKeywords }: { tasteKeywords: TasteKeywo
 
   return (
     <>
-      {/* ✅ 페이지 상단(카드 왼쪽)에 "고정" 배치: 스크롤 따라가지 않음 (fixed 제거) */}
+      {/* ✅ 좌측 필터바 */}
       <aside className="w-[180px]">
         <div className="space-y-2">
           {/* 필터 설정 */}
           <button
             type="button"
-            onClick={() => openPanel("all")}
-            className={`flex h-11 w-full items-center justify-between rounded-2xl px-4 text-[14px] font-medium ring-1 transition ${
+            onClick={(e) => openPanel("all", e)}
+            onMouseEnter={(e) => openPanel("all", e)}
+            onMouseLeave={() => scheduleClose(150)}
+            className={`flex h-11 w-full items-center justify-between rounded-2xl px-4 text-[14px] font-medium ${
               isPanelActive("all")
-                ? "bg-neutral-400 text-white ring-neutral-400"
-                : "bg-white text-neutral-800 ring-neutral-200 hover:bg-neutral-50"
+                ? "bg-neutral-200 text-neutral-700"
+                : `text-neutral-700 ring-neutral-200 ${isFocused("all") ? "bg-neutral-200" : "bg-white hover:bg-neutral-200"}`
             }`}
           >
             <span>필터 설정{activeCount ? ` (${activeCount})` : ""}</span>
             <IconChevron />
           </button>
 
-          {/* 버튼들 (박스로 또 묶지 않음) */}
-          <RowButton label="제품 설정" onClick={() => openPanel("product")} active={isPanelActive("product")} />
-          <RowButton label="종류" onClick={() => openPanel("type")} active={isPanelActive("type")} />
-          <RowButton label="맛 키워드" onClick={() => openPanel("taste")} active={isPanelActive("taste")} />
-          <RowButton label="단맛" onClick={() => openPanel("sweetness")} active={isPanelActive("sweetness")} />
-          <RowButton label="비린맛" onClick={() => openPanel("fishy")} active={isPanelActive("fishy")} />
-          <RowButton label="인공감" onClick={() => openPanel("artificial")} active={isPanelActive("artificial")} />
-          <RowButton label="더부룩함" onClick={() => openPanel("bloating")} active={isPanelActive("bloating")} />
-          <RowButton label="물" onClick={() => openPanel("water")} active={isPanelActive("water")} />
-          <RowButton label="우유" onClick={() => openPanel("milk")} active={isPanelActive("milk")} />
+          <RowButton
+            label="제품 설정"
+            onClick={(e) => openPanel("product", e)}
+            onMouseEnter={(e) => openPanel("product", e)}
+            onMouseLeave={() => scheduleClose(150)}
+            active={isPanelActive("product")}
+            focused={isFocused("product")}
+          />
+          <RowButton
+            label="종류"
+            onClick={(e) => openPanel("type", e)}
+            onMouseEnter={(e) => openPanel("type", e)}
+            onMouseLeave={() => scheduleClose(150)}
+            active={isPanelActive("type")}
+            focused={isFocused("type")}
+          />
+          <RowButton
+            label="맛 키워드"
+            onClick={(e) => openPanel("taste", e)}
+            onMouseEnter={(e) => openPanel("taste", e)}
+            onMouseLeave={() => scheduleClose(150)}
+            active={isPanelActive("taste")}
+            focused={isFocused("taste")}
+          />
+          <RowButton
+            label="단맛"
+            onClick={(e) => openPanel("sweetness", e)}
+            onMouseEnter={(e) => openPanel("sweetness", e)}
+            onMouseLeave={() => scheduleClose(150)}
+            active={isPanelActive("sweetness")}
+            focused={isFocused("sweetness")}
+          />
+          <RowButton
+            label="비린맛"
+            onClick={(e) => openPanel("fishy", e)}
+            onMouseEnter={(e) => openPanel("fishy", e)}
+            onMouseLeave={() => scheduleClose(150)}
+            active={isPanelActive("fishy")}
+            focused={isFocused("fishy")}
+          />
+          <RowButton
+            label="인공감"
+            onClick={(e) => openPanel("artificial", e)}
+            onMouseEnter={(e) => openPanel("artificial", e)}
+            onMouseLeave={() => scheduleClose(150)}
+            active={isPanelActive("artificial")}
+            focused={isFocused("artificial")}
+          />
+          <RowButton
+            label="더부룩함"
+            onClick={(e) => openPanel("bloating", e)}
+            onMouseEnter={(e) => openPanel("bloating", e)}
+            onMouseLeave={() => scheduleClose(150)}
+            active={isPanelActive("bloating")}
+            focused={isFocused("bloating")}
+          />
+          <RowButton
+            label="물"
+            onClick={(e) => openPanel("water", e)}
+            onMouseEnter={(e) => openPanel("water", e)}
+            onMouseLeave={() => scheduleClose(150)}
+            active={isPanelActive("water")}
+            focused={isFocused("water")}
+          />
+          <RowButton
+            label="우유"
+            onClick={(e) => openPanel("milk", e)}
+            onMouseEnter={(e) => openPanel("milk", e)}
+            onMouseLeave={() => scheduleClose(150)}
+            active={isPanelActive("milk")}
+            focused={isFocused("milk")}
+          />
         </div>
       </aside>
 
-      {/* 오픈 시 배경 */}
-      {open && <div className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px]" />}
-
-      {/* ✅ 선택 화면: 항목별 자동 크기 + 최대 높이만 제한 */}
+      {/* ✅ 선택 화면: 버튼 오른쪽에 위치 + hover 유지 */}
       {open && (
         <div
           ref={panelRef}
+          onMouseEnter={cancelClose}
+          onMouseLeave={() => scheduleClose(150)}
+          style={pos ? { left: pos.left, top: pos.top } : undefined}
           className={[
-            "fixed z-50 rounded-3xl bg-white p-6 shadow-2xl ring-1 ring-black/5",
-            "left-1/2 top-24 -translate-x-1/2",
+            "fixed z-50 rounded-2xl bg-white px-4 py-3 shadow-2xl ring-1 ring-black/5",
             panelWidthClass,
             "max-h-[70vh] overflow-auto scrollbar-stable",
           ].join(" ")}
         >
-          {/* 상단 */}
-          <div className="mb-4 flex items-center justify-between">
-            <div className="text-[16px] font-bold text-neutral-800">{panelTitle(panelKey)}</div>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={resetAll}
-                disabled={activeCount === 0}
-                className="rounded-full bg-neutral-200 px-4 py-2 text-[12px] font-semibold text-neutral-700 disabled:opacity-50"
-              >
-                초기화
-              </button>
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="rounded-full bg-neutral-700 px-4 py-2 text-[12px] font-semibold text-white"
-              >
-                닫기
-              </button>
-            </div>
-          </div>
-
-          {/* 내용 */}
           {panelKey === "all" ? (
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <Section title="맛 키워드" className="md:col-span-2">
                 {tasteKeywords.map((k) => (
                   <Chip
@@ -245,11 +349,7 @@ export default function FilterBar({ tasteKeywords }: { tasteKeywords: TasteKeywo
 
               <Section title="더부룩함">
                 {PRESENCE.map((v) => (
-                  <Chip
-                    key={v}
-                    active={isSelectedMulti("bloating", v)}
-                    onClick={() => toggleMulti("bloating", v)}
-                  >
+                  <Chip key={v} active={isSelectedMulti("bloating", v)} onClick={() => toggleMulti("bloating", v)}>
                     {v}
                   </Chip>
                 ))}
@@ -307,12 +407,12 @@ function SinglePanel({
   toggleSingle: (k: SingleKey, v: string) => void;
 }) {
   if (panelKey === "product" || panelKey === "type") {
-    return <div className="rounded-2xl bg-neutral-50 p-5 text-[14px] text-neutral-600">아직 구현 전이에요.</div>;
+    return <div className="rounded-2xl bg-neutral-50 p-4 text-[14px] text-neutral-600">아직 구현 전이에요.</div>;
   }
 
   if (panelKey === "taste") {
     return (
-      <Section title="맛 키워드">
+      <div className="flex flex-wrap gap-3">
         {tasteKeywords.map((k) => (
           <Chip
             key={k.id}
@@ -323,105 +423,79 @@ function SinglePanel({
             {k.label}
           </Chip>
         ))}
-      </Section>
+      </div>
     );
   }
 
   if (panelKey === "sweetness") {
     return (
-      <Section title="단맛">
+      <div className="flex flex-wrap gap-3">
         {SWEETNESS.map((v) => (
           <Chip key={v} active={isSelectedMulti("sweetness", v)} onClick={() => toggleMulti("sweetness", v)}>
             {v}
           </Chip>
         ))}
-      </Section>
+      </div>
     );
   }
 
   if (panelKey === "fishy") {
     return (
-      <Section title="비린맛">
+      <div className="flex flex-wrap gap-3">
         {PRESENCE.map((v) => (
           <Chip key={v} active={isSelectedMulti("fishy", v)} onClick={() => toggleMulti("fishy", v)}>
             {v}
           </Chip>
         ))}
-      </Section>
+      </div>
     );
   }
 
   if (panelKey === "artificial") {
     return (
-      <Section title="인공감">
+      <div className="flex flex-wrap gap-3">
         {PRESENCE.map((v) => (
           <Chip key={v} active={isSelectedMulti("artificial", v)} onClick={() => toggleMulti("artificial", v)}>
             {v}
           </Chip>
         ))}
-      </Section>
+      </div>
     );
   }
 
   if (panelKey === "bloating") {
     return (
-      <Section title="더부룩함">
+      <div className="flex flex-wrap gap-3">
         {PRESENCE.map((v) => (
           <Chip key={v} active={isSelectedMulti("bloating", v)} onClick={() => toggleMulti("bloating", v)}>
             {v}
           </Chip>
         ))}
-      </Section>
+      </div>
     );
   }
 
   if (panelKey === "water") {
     return (
-      <Section title="물">
+      <div className="flex flex-wrap gap-3">
         {RECO.map((v) => (
           <Chip key={v} active={isSelectedSingle("water", v)} onClick={() => toggleSingle("water", v)}>
             {v}
           </Chip>
         ))}
-      </Section>
+      </div>
     );
   }
 
-  // milk
   return (
-    <Section title="우유">
+    <div className="flex flex-wrap gap-3">
       {RECO.map((v) => (
         <Chip key={v} active={isSelectedSingle("milk", v)} onClick={() => toggleSingle("milk", v)}>
           {v}
         </Chip>
       ))}
-    </Section>
+    </div>
   );
-}
-
-function panelTitle(k: PanelKey) {
-  switch (k) {
-    case "all":
-      return "필터 설정";
-    case "product":
-      return "제품 설정";
-    case "type":
-      return "종류";
-    case "taste":
-      return "맛 키워드";
-    case "sweetness":
-      return "단맛";
-    case "fishy":
-      return "비린맛";
-    case "artificial":
-      return "인공감";
-    case "bloating":
-      return "더부룩함";
-    case "water":
-      return "물";
-    case "milk":
-      return "우유";
-  }
 }
 
 /* ---------------- components ---------------- */
@@ -429,22 +503,29 @@ function panelTitle(k: PanelKey) {
 function RowButton({
   label,
   onClick,
+  onMouseEnter,
+  onMouseLeave,
   active = false,
+  focused = false,
 }: {
   label: string;
-  onClick: () => void;
+  onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  onMouseEnter?: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  onMouseLeave?: (e: React.MouseEvent<HTMLButtonElement>) => void;
   active?: boolean;
+  focused?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`flex h-11 w-full items-center justify-between rounded-2xl px-4 text-[14px] font-medium ring-1 transition
-        ${
-          active
-            ? "bg-neutral-400 text-white ring-neutral-400"
-            : "bg-white text-neutral-700 ring-neutral-200 hover:bg-neutral-50"
-        }`}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      className={`flex h-11 w-full items-center justify-between rounded-2xl px-4 text-[14px] font-medium ${
+        active
+          ? "bg-neutral-200 text-neutral-700"
+          : `text-neutral-700 ring-neutral-200 ${focused ? "bg-neutral-200" : "bg-white hover:bg-neutral-200"}`
+      }`}
     >
       <span>{label}</span>
       <IconChevron />
@@ -504,7 +585,7 @@ function Chip({
       type="button"
       onClick={onClick}
       className={`flex items-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-[14px] font-medium ${
-        active ? "bg-neutral-700 text-white" : "bg-neutral-100 text-neutral-600"
+        active ? "bg-neutral-500 text-white" : "bg-neutral-200 text-neutral-600"
       }`}
     >
       {iconUrl && <img src={iconUrl} alt="" width={26} height={26} style={{ display: "block" }} />}

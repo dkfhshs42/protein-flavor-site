@@ -4,6 +4,7 @@ import { fetchFlavors } from "@/lib/flavors";
 import type { Filters } from "@/lib/flavors";
 import { fetchTasteKeywords } from "@/lib/tasteKeywords";
 import AIRecommendButton from "@/components/AIRecommendButton";
+import ActiveFilterChips from "@/components/ActiveFilterChips";
 
 type ProteinType = "WPC" | "WPI";
 
@@ -73,11 +74,10 @@ export default async function Home({
 
   return (
     <main className="min-h-screen bg-white px-6 py-10">
-      {/* ✅ 전체를 왼쪽으로 더 당기고 싶으면 max-w-7xl 유지 + center 정렬 제거 */}
       <div className="mx-60 w-full max-w-7xl">
-        {/* ✅ 1행: (필터 컬럼 비우고) 오른쪽 컬럼에서 검색창 시작 */}
-        <div className="grid grid-cols-[200px_1fr] items-center gap-10">
-          <div /> {/* 왼쪽 필터 자리(상단은 비워서 정렬 맞춤) */}
+        {/* ✅ 1행: 검색창 + AI 추천 */}
+        <div className="grid grid-cols-[180px_1fr] items-center gap-10">
+          <div />
 
           <div className="flex items-center gap-4">
             <form method="GET" className="flex w-full items-center gap-3">
@@ -107,16 +107,23 @@ export default async function Home({
           </div>
         </div>
 
-        {/* ✅ 2행: 왼쪽 필터 / 오른쪽 (총 결과 + 카드) */}
-        <div className="mt-6 grid grid-cols-[200px_1fr] items-start gap-10">
+        {/* ✅ 검색창 아래: 활성 필터 태그(칩) */}
+        <div className="mt-3 grid grid-cols-[180px_1fr] items-start gap-10">
+          <div />
+          <ActiveFilterChips tasteKeywords={tasteKeywords} />
+        </div>
+
+        {/* ✅ 2행: 왼쪽 필터 / 오른쪽 결과 */}
+        <div className="mt-6 grid grid-cols-[180px_1fr] items-start gap-10">
           <div className="pt-1">
             <FilterBar tasteKeywords={tasteKeywords} />
           </div>
 
           <div>
-            {/* ✅ 이 텍스트의 왼쪽 시작점 = 검색 input 시작점 */}
             <p className="text-[13px] text-neutral-600">
-              총 <span className="text-[13px] text-neutral-600">{flavors.length}</span>개 결과
+              총{" "}
+              <span className="text-[13px] text-neutral-600">{flavors.length}</span>개
+              결과
             </p>
 
             <div className="mt-6 flex flex-col">
